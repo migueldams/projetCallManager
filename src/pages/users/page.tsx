@@ -1,83 +1,23 @@
-
+import axios from 'axios';
+import { api } from '../../store/authStore';
+import { getToken } from '../../utils/auth';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 
 interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: 'Admin' | 'RH' | 'Superviseur' | 'Agent' | 'Manager';
   department: string;
   status: 'active' | 'inactive' | 'suspended';
   lastLogin: string;
-  joinDate: string;
   avatar: string;
   permissions: string[];
 }
 
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Marie Dubois',
-    email: 'admin@pulsemanager.com',
-    role: 'Admin',
-    department: 'IT',
-    status: 'active',
-    lastLogin: '2024-01-20',
-    joinDate: '2022-03-15',
-    avatar: 'https://readdy.ai/api/search-image?query=professional%20female%20executive%20portrait%20with%20friendly%20smile%2C%20modern%20office%20background%2C%20business%20attire%2C%20high%20quality%20corporate%20headshot&width=100&height=100&seq=admin-avatar-2&orientation=squarish',
-    permissions: ['manage_users', 'view_reports', 'manage_system']
-  },
-  {
-    id: '2',
-    name: 'Pierre Martin',
-    email: 'rh@pulsemanager.com',
-    role: 'RH',
-    department: 'Ressources Humaines',
-    status: 'active',
-    lastLogin: '2024-01-20',
-    joinDate: '2022-06-01',
-    avatar: 'https://readdy.ai/api/search-image?query=professional%20male%20HR%20manager%20portrait%2C%20friendly%20approachable%20appearance%2C%20modern%20office%20setting%2C%20business%20casual%20attire&width=100&height=100&seq=rh-avatar-2&orientation=squarish',
-    permissions: ['manage_employees', 'view_reports', 'manage_leaves']
-  },
-  {
-    id: '3',
-    name: 'Sophie Leroy',
-    email: 'agent@pulsemanager.com',
-    role: 'Agent',
-    department: 'Call Center',
-    status: 'active',
-    lastLogin: '2024-01-20',
-    joinDate: '2023-08-22',
-    avatar: 'https://readdy.ai/api/search-image?query=young%20professional%20female%20call%20center%20agent%20portrait%2C%20headset%20around%20neck%2C%20bright%20office%20environment%2C%20confident%20smile&width=100&height=100&seq=agent-avatar-2&orientation=squarish',
-    permissions: ['view_calls', 'manage_own_profile']
-  },
-  {
-    id: '4',
-    name: 'Thomas Durand',
-    email: 'superviseur@pulsemanager.com',
-    role: 'Superviseur',
-    department: 'Call Center',
-    status: 'active',
-    lastLogin: '2024-01-19',
-    joinDate: '2023-01-10',
-    avatar: 'https://readdy.ai/api/search-image?query=professional%20male%20supervisor%20in%20business%20shirt%20smiling%20confidently%2C%20call%20center%20background%2C%20leadership%20presence&width=100&height=100&seq=superviseur-avatar-1&orientation=squarish',
-    permissions: ['manage_team', 'view_performance', 'manage_calls']
-  },
-  {
-    id: '5',
-    name: 'Émilie Rodriguez',
-    email: 'emily.rodriguez@pulsemanager.com',
-    role: 'Agent',
-    department: 'Call Center',
-    status: 'inactive',
-    lastLogin: '2024-01-15',
-    joinDate: '2023-11-05',
-    avatar: 'https://readdy.ai/api/search-image?query=professional%20latina%20woman%20with%20long%20dark%20hair%20smiling%20warmly%20in%20call%20center%20environment%2C%20business%20headshot%20style&width=100&height=100&seq=emily-avatar-2&orientation=squarish',
-    permissions: ['view_calls', 'manage_own_profile']
-  }
-];
 
 const statusColors = {
   active: 'bg-green-100 text-green-800 border-green-200',
@@ -101,16 +41,34 @@ const statusLabels = {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuthStore();
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  //   const isAgent = (user: User): boolean => {
+  //   return user.role === "Agent";
+  // };
+  useEffect(() => {
+
+    api.get('/post/api/users', {
+      headers: {
+        Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+      }
+    }).then((res) => {
+      if (res.status === 200) {
+        setUsers(res.data.User)
+      }
+
+    })
+  }, [])
+
+
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.department.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     const matchesStatus = selectedStatus === 'all' || user.status === selectedStatus;
     const matchesDepartment = selectedDepartment === 'all' || user.department === selectedDepartment;
@@ -128,8 +86,8 @@ export default function UsersPage() {
   const departments = ['all', ...new Set(users.map(user => user.department))];
 
   const toggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => 
-      user.id === userId 
+    setUsers(users.map(user =>
+      user.id === userId
         ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' as 'active' | 'inactive' }
         : user
     ));
@@ -270,7 +228,7 @@ export default function UsersPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
         <div className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Utilisateurs</h2>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -284,80 +242,82 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user, index) => (
-                  <motion.tr
-                    key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-3">
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{user.name}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                {filteredUsers.map(
+                  (user, index) => (
+
+                    <motion.tr
+                      key={user.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={user.avatar}
+                            alt={user.firstName}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">{user.firstName}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleColors[user.role]}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-700 dark:text-gray-300">{user.department}</td>
-                    <td className="py-4 px-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${statusColors[user.status]}`}>
-                        {statusLabels[user.status]}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
-                      {new Date(user.lastLogin).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-colors cursor-pointer"
-                          title="Voir Détails"
-                        >
-                          <i className="ri-eye-line"></i>
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-2xl transition-colors cursor-pointer"
-                          title="Modifier Utilisateur"
-                        >
-                          <i className="ri-edit-line"></i>
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => toggleUserStatus(user.id)}
-                          className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-2xl transition-colors cursor-pointer"
-                          title={user.status === 'active' ? 'Désactiver' : 'Activer'}
-                        >
-                          <i className="ri-settings-line"></i>
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors cursor-pointer"
-                          title="Supprimer Utilisateur"
-                        >
-                          <i className="ri-delete-bin-line"></i>
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${roleColors[user.role]}`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-700 dark:text-gray-300">{user.department}</td>
+                      <td className="py-4 px-4">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${statusColors[user.status]}`}>
+                          {statusLabels[user.status]}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
+                        {new Date(user.lastLogin).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-colors cursor-pointer"
+                            title="Voir Détails"
+                          >
+                            <i className="ri-eye-line"></i>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-2xl transition-colors cursor-pointer"
+                            title="Modifier Utilisateur"
+                          >
+                            <i className="ri-edit-line"></i>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => toggleUserStatus(user.id)}
+                            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-2xl transition-colors cursor-pointer"
+                            title={user.status === 'active' ? 'Désactiver' : 'Activer'}
+                          >
+                            <i className="ri-settings-line"></i>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors cursor-pointer"
+                            title="Supprimer Utilisateur"
+                          >
+                            <i className="ri-delete-bin-line"></i>
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
               </tbody>
             </table>
           </div>

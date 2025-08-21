@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import React from 'react';
 import back from './image/back1.jpeg'
+import logo from './image/18770.jpg'
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,8 +19,9 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+  console.log(email, password)
     try {
+      
       const success = await login(email, password);
       if (success) {
         toast.success('Connexion réussie !');
@@ -75,14 +77,7 @@ export default function Login() {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <motion.image
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl"
-          >
-            <img className='w-20 h-20 object-cover rounded-2xl' src="../../../src/assets/image/logo2.PNG" alt="" />
-          </motion.image>
+         
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
