@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useAppStore } from '../../../store/appStore';
 import type { Note } from '../../../types';
+import React from 'react';
 
 interface NotesGridProps {
   notes: Note[];

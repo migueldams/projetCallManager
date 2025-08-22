@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../../../store/appStore';
 import { useAuthStore } from '../../../store/authStore';
 import type { Note } from '../../../types';
+import React from 'react';
+
 
 interface NoteEditorProps {
   noteId: string | null;

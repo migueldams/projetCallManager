@@ -1,9 +1,10 @@
-import axios from 'axios';
+import UserEditor from './components/UserEdit'
+import UserView from './components/UserView';
 import { api } from '../../store/authStore';
 import { getToken } from '../../utils/auth';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface User {
   id: string;
@@ -12,7 +13,7 @@ interface User {
   email: string;
   role: 'Admin' | 'RH' | 'Superviseur' | 'Agent' | 'Manager';
   department: string;
-  status: 'active' | 'inactive' | 'suspended';
+  status_activite: 'active' | 'inactive' | 'suspended';
   lastLogin: string;
   avatar: string;
   permissions: string[];
@@ -46,9 +47,50 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false)
   //   const isAgent = (user: User): boolean => {
   //   return user.role === "Agent";
   // };
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setIsEditorOpen(true);
+  };
+
+  const handleViewUser = (userId :string) =>{
+    setSelectedUser(userId)
+    setIsViewOpen(true)
+  }
+
+  const handleEditUser = (noteId: string) => {
+    setSelectedUser(noteId);
+    setIsEditorOpen(true);
+  };
+
+  const handlerDeleteUser = (userId: String)=> {
+    
+    api.delete(`/post/api/deleteUser/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+      }
+      }).then(_=>{
+      api.get('/post/api/users', {
+      headers: {
+        Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+      }
+      }).then((res) => {
+      if (res.status === 200) {
+        setUsers(res.data.User)
+      }
+
+    })
+    })
+
+  }
+
+
+
   useEffect(() => {
 
     api.get('/post/api/users', {
@@ -70,15 +112,15 @@ export default function UsersPage() {
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.department.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    const matchesStatus = selectedStatus === 'all' || user.status === selectedStatus;
+    const matchesStatus = selectedStatus === 'all' || user.status_activite === selectedStatus;
     const matchesDepartment = selectedDepartment === 'all' || user.department === selectedDepartment;
     return matchesSearch && matchesRole && matchesStatus && matchesDepartment;
   });
 
   const stats = {
     totalUsers: users.length,
-    activeUsers: users.filter(u => u.status === 'active').length,
-    inactiveUsers: users.filter(u => u.status === 'inactive').length,
+    activeUsers: users.filter(u => u.status_activite === 'active').length,
+    inactiveUsers: users.filter(u => u.status_activite === 'inactive').length,
     adminUsers: users.filter(u => u.role === 'Admin').length
   };
 
@@ -88,7 +130,7 @@ export default function UsersPage() {
   const toggleUserStatus = (userId: string) => {
     setUsers(users.map(user =>
       user.id === userId
-        ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' as 'active' | 'inactive' }
+        ? { ...user, status: user.status_activite === 'active' ? 'inactive' : 'active' as 'active' | 'inactive' }
         : user
     ));
   };
@@ -128,6 +170,7 @@ export default function UsersPage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl transition-colors whitespace-nowrap cursor-pointer"
+          onClick={()=>handleCreateUser()}
         >
           <i className="ri-user-add-line w-4 h-4 mr-2"></i>
           Ajouter Utilisateur
@@ -272,8 +315,8 @@ export default function UsersPage() {
                       </td>
                       <td className="py-4 px-4 text-gray-700 dark:text-gray-300">{user.department}</td>
                       <td className="py-4 px-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${statusColors[user.status]}`}>
-                          {statusLabels[user.status]}
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${statusColors[user.status_activite]}`}>
+                          {statusLabels[user.status_activite]}
                         </span>
                       </td>
                       <td className="py-4 px-4 text-gray-700 dark:text-gray-300">
@@ -286,6 +329,7 @@ export default function UsersPage() {
                             whileTap={{ scale: 0.9 }}
                             className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-colors cursor-pointer"
                             title="Voir Détails"
+                            onClick={()=>handleViewUser(user.id)}
                           >
                             <i className="ri-eye-line"></i>
                           </motion.button>
@@ -294,6 +338,7 @@ export default function UsersPage() {
                             whileTap={{ scale: 0.9 }}
                             className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-2xl transition-colors cursor-pointer"
                             title="Modifier Utilisateur"
+                            onClick={()=>handleEditUser(user.id)}
                           >
                             <i className="ri-edit-line"></i>
                           </motion.button>
@@ -302,7 +347,7 @@ export default function UsersPage() {
                             whileTap={{ scale: 0.9 }}
                             onClick={() => toggleUserStatus(user.id)}
                             className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-2xl transition-colors cursor-pointer"
-                            title={user.status === 'active' ? 'Désactiver' : 'Activer'}
+                            title={user.status_activite === 'active' ? 'Désactiver' : 'Activer'}
                           >
                             <i className="ri-settings-line"></i>
                           </motion.button>
@@ -311,6 +356,8 @@ export default function UsersPage() {
                             whileTap={{ scale: 0.9 }}
                             className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-colors cursor-pointer"
                             title="Supprimer Utilisateur"
+                            onClick={()=>handlerDeleteUser(user.id)}
+                            
                           >
                             <i className="ri-delete-bin-line"></i>
                           </motion.button>
@@ -323,6 +370,30 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+      <AnimatePresence>
+        {isEditorOpen && (
+          <UserEditor
+            userId={selectedUser}
+            isOpen={isEditorOpen}
+            onClose={() => {
+              setIsEditorOpen(false);
+              setSelectedUser(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isViewOpen && (
+          <UserView
+            userId={selectedUser}
+            isOpen={isViewOpen}
+            onClose={() => {
+              setIsViewOpen(false);
+              setSelectedUser(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* AI User Management Insights */}
       <motion.div

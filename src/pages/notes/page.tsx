@@ -8,7 +8,7 @@ import NoteEditor from './components/NoteEditor';
 import NoteFilters from './components/NoteFilters';
 
 export default function NotesPage() {
-  const { user } = useAuthStore();
+  const {user} = useAuthStore();
   const { notes } = useAppStore();
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
