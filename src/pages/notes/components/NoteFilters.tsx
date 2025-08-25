@@ -8,7 +8,7 @@ interface NoteFiltersProps {
     search: string;
   };
   onFiltersChange: (filters: any) => void;
-  totalNotes: number;
+  totalNotes: number | undefined;
 }
 
 const categoryOptions = [
@@ -61,7 +61,7 @@ export default function NoteFilters({ filters, onFiltersChange, totalNotes }: No
               Filtres & Organisation
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {totalNotes} note{totalNotes > 1 ? 's' : ''} au total
+              {totalNotes} notes au total
             </p>
           </div>
         </div>

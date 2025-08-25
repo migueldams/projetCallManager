@@ -1,13 +1,37 @@
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAppStore } from '../../store/appStore';
+import { motion ,AnimatePresence} from 'framer-motion';
+import type { Candidate } from '../../types';
+import { api } from '../../store/authStore';
+import { getToken } from '../../utils/auth';
+import CandidateView from './components/CandidateView';
+
 
 export default function RecruitmentPage() {
-  const { candidates } = useAppStore();
+
+  const [candidates, setCandidates] = useState<Candidate[]>([])
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedCandidate, setSelectedCandidate] =useState<string | null>(null)
+  const [isViewOpen, setIsViewOpen] =useState(false)
   const [showNewJobModal, setShowNewJobModal] = useState(false);
+
+  useEffect(()=>{
+    api.get('/post/api/Candidates',{
+      headers: {
+              Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+      }
+    }).then(res =>{
+        setCandidates(res.data.candidate)
+        
+    })
+  },[])
+
+  const handleSubmit = (candidateId :string)=>{
+    setSelectedCandidate(candidateId)
+    setIsViewOpen(true)
+
+  }
 
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = candidate.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -176,7 +200,7 @@ export default function RecruitmentPage() {
                       </div>
                       
                       <div className="flex flex-wrap gap-2">
-                        {candidate.skills.map((skill) => (
+                        {Array.isArray(candidate.skills) && candidate.skills.map((skill) => (
                           <span
                             key={skill}
                             className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl"
@@ -192,6 +216,7 @@ export default function RecruitmentPage() {
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
+                      onClick={()=>handleSubmit(candidate.id)}
                       className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-2xl transition-colors cursor-pointer"
                       title="Voir Détails"
                     >
@@ -209,6 +234,18 @@ export default function RecruitmentPage() {
                 </div>
               </motion.div>
             ))}
+            <AnimatePresence>
+        {isViewOpen && (
+          <CandidateView
+            userId={selectedCandidate}
+            isOpen={isViewOpen}
+            onClose={() => {
+              setIsViewOpen(false);
+              setSelectedCandidate(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import {removeToken, setToken } from '../utils/auth';
+import {removeToken, setToken,setUserId} from '../utils/auth';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User, UserRole } from '../types';
@@ -37,7 +37,9 @@ export const useAuthStore = create<AuthState>()(
         const response = await api.post('/post/api/login', { email ,password });
         console.log(response.data.token)
         if(response.status == 200){
+          const userId = response.data.user.id
           const token = response.data.token
+          setUserId(userId)
           setToken(token)
           const user = response.data.user
           console.log(token)

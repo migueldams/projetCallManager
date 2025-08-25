@@ -1,13 +1,36 @@
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAppStore } from '../../store/appStore';
+import { motion,AnimatePresence } from 'framer-motion';
+import { api } from '../../store/authStore';
+import { getToken } from '../../utils/auth';
+import type { Stock } from '../../types';
+import StocksEdit from './components/StocksEdit';
 
 export default function InventoryPage() {
-  const { stocks } = useAppStore();
+  const [stocks, setStocks] = useState<Stock[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [isEditStockOpen  ,setIsEditStockOpen] = useState(false)
+
+  useEffect(()=>{
+    api.get('/post/api/Stock',{
+       headers: {
+              Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+            }
+    }).then(res =>{
+      if(res.status == 200){
+        setStocks(res.data.stock)
+      }
+      
+    })
+
+  },[])
+
+  const handleEditStocks = ()=>{
+
+    setIsEditStockOpen(true)
+  }
 
   const filteredInventory = stocks.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,6 +66,7 @@ export default function InventoryPage() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          onClick={()=>handleEditStocks()}
           className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl transition-colors whitespace-nowrap cursor-pointer"
         >
           <i className="ri-add-line w-4 h-4 mr-2"></i>
@@ -230,6 +254,16 @@ export default function InventoryPage() {
                     </td>
                   </motion.tr>
                 ))}
+                <AnimatePresence>
+        {isEditStockOpen && (
+          <StocksEdit
+            isOpen={isEditStockOpen}
+            onClose={() => {
+              setIsEditStockOpen(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
               </tbody>
             </table>
           </div>

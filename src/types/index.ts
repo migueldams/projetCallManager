@@ -75,7 +75,7 @@ export interface Note {
   priority: NotePriority;
   tags: string[];
   isPinned: boolean;
-  userId: string;
+  userId: string | null;
   createdAt: string;
   updatedAt: string;
 }

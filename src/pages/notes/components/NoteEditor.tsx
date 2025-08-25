@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAppStore } from '../../../store/appStore';
-import { useAuthStore } from '../../../store/authStore';
-import type { Note } from '../../../types';
+import { getUserId, getToken } from '../../../utils/auth';
+import { api } from '../../../store/authStore';
 import React from 'react';
+import type { Note } from '../../../types';
+import type { Dispatch, SetStateAction } from 'react';
 
 
 interface NoteEditorProps {
   noteId: string | null;
+  setNotes: Dispatch<SetStateAction<Note[]>>;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -27,10 +29,8 @@ const priorityOptions = [
   { value: 'high', label: 'Haute', color: 'text-red-600' },
 ];
 
-export default function NoteEditor({ noteId, isOpen, onClose }: NoteEditorProps) {
-  const { user } = useAuthStore();
-  const { notes, addNote, updateNote } = useAppStore();
-  
+export default function NoteEditor({ noteId, setNotes, isOpen, onClose }: NoteEditorProps) {
+
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -39,24 +39,26 @@ export default function NoteEditor({ noteId, isOpen, onClose }: NoteEditorProps)
     tags: [] as string[],
     isPinned: false,
   });
-  
+
   const [newTag, setNewTag] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Load existing note data if editing
   useEffect(() => {
-    if (noteId) {
-      const note = notes.find(n => n.id === noteId);
-      if (note) {
-        setFormData({
-          title: note.title,
-          content: note.content,
-          category: note.category,
-          priority: note.priority,
-          tags: note.tags,
-          isPinned: note.isPinned,
-        });
-      }
+
+    if (noteId != null) {
+      api.get(`/post/api/notes/${noteId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+          }
+        }
+      ).then(res => {
+        setFormData(res.data.note);
+      })
+
+
+
     } else {
       // Reset form for new note
       setFormData({
@@ -68,39 +70,45 @@ export default function NoteEditor({ noteId, isOpen, onClose }: NoteEditorProps)
         isPinned: false,
       });
     }
-  }, [noteId, notes]);
+  }, []);
 
   const handleSave = async () => {
-    if (!formData.title.trim() || !formData.content.trim()) {
-      alert('Veuillez remplir le titre et le contenu de la note.');
-      return;
-    }
-
     setIsSaving(true);
-    
     try {
-      const noteData = {
-        ...formData,
-        userId: user?.id || '1',
-        updatedAt: new Date().toISOString(),
-      };
-
       if (noteId) {
         // Update existing note
-        updateNote(noteId, noteData);
+        
+        api.put(`/post/api/updateNote/${noteId}`, formData, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+          }
+        }).then(_ => {
+          api.get('/post/api/notes', {
+            headers: {
+              Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+            }
+          }).then(res => {
+            setNotes(res.data.notes)
+          })
+        })
+
       } else {
         // Create new note
-        const newNote: Note = {
-          ...noteData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-        };
-        addNote(newNote);
+        const formDatas = { ...formData, userId: getUserId() }
+        console.log(formDatas)
+        api.post('/post/api/createNote', formDatas, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+          }
+        })
+        api.get('/post/api/notes', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+          }
+        }).then(res => {
+          setNotes(res.data.notes)
+        })
       }
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       onClose();
     } catch (error) {
       console.error('Error saving note:', error);
@@ -166,22 +174,21 @@ export default function NoteEditor({ noteId, isOpen, onClose }: NoteEditorProps)
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setFormData({ ...formData, isPinned: !formData.isPinned })}
-                className={`p-2 rounded-2xl transition-all cursor-pointer ${
-                  formData.isPinned 
-                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
-                }`}
+                className={`p-2 rounded-2xl transition-all cursor-pointer ${formData.isPinned
+                  ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
+                  }`}
                 title={formData.isPinned ? 'Désépingler' : 'Épingler'}
               >
                 <i className="ri-pushpin-line"></i>
               </motion.button>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -278,11 +285,11 @@ export default function NoteEditor({ noteId, isOpen, onClose }: NoteEditorProps)
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tags
                 </label>
-                
+
                 {/* Existing Tags */}
                 {formData.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {formData.tags.map((tag, index) => (
+                    {Array.isArray(formData.tags) && formData.tags.map((tag, index) => (
                       <motion.span
                         key={index}
                         initial={{ opacity: 0, scale: 0.8 }}
@@ -362,7 +369,7 @@ export default function NoteEditor({ noteId, isOpen, onClose }: NoteEditorProps)
               >
                 Annuler
               </motion.button>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

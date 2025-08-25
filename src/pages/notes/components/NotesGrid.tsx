@@ -1,11 +1,15 @@
 
 import { motion } from 'framer-motion';
-import { useAppStore } from '../../../store/appStore';
 import type { Note } from '../../../types';
 import React from 'react';
+import { api } from '../../../store/authStore';
+import { getToken } from '../../../utils/auth';
+import type { Dispatch, SetStateAction } from 'react';
+
 
 interface NotesGridProps {
   notes: Note[];
+  setNotes: Dispatch<SetStateAction<Note[]>>;
   onEditNote: (noteId: string) => void;
 }
 
@@ -24,66 +28,31 @@ const categoryConfig = {
   reminder: { color: 'text-indigo-600', icon: 'ri-alarm-line', label: 'Rappel' },
 };
 
-// Mock data si aucune note
-const mockNotes: Note[] = [
-  {
-    id: '1',
-    title: 'Formation équipe commerciale',
-    content: 'Organiser formation sur les nouvelles techniques de vente pour l\'équipe. Points clés:\n- Techniques d\'objection\n- Scripts d\'appels\n- Gestion des objections clients\n- Outils CRM avancés\n\nDate prévue: 15 février 2024',
-    category: 'work',
-    priority: 'high',
-    tags: ['formation', 'équipe', 'vente'],
-    isPinned: true,
-    userId: '3',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T15:30:00Z',
-  },
-  {
-    id: '2',
-    title: 'Idées amélioration interface CRM',
-    content: 'Suggestions d\'amélioration pour le CRM:\n\n1. Dashboard plus intuitif\n2. Raccourcis clavier pour actions courantes\n3. Filtres avancés sur les contacts\n4. Intégration calendrier\n5. Notifications push pour rappels\n\nÀ discuter avec l\'équipe IT',
-    category: 'idea',
-    priority: 'medium',
-    tags: ['crm', 'amélioration', 'interface'],
-    isPinned: false,
-    userId: '3',
-    createdAt: '2024-01-14T14:20:00Z',
-    updatedAt: '2024-01-14T14:20:00Z',
-  },
-  {
-    id: '3',
-    title: 'Réunion équipe - Points à aborder',
-    content: '📋 Ordre du jour réunion équipe:\n\n• Résultats du mois de janvier\n• Nouveaux objectifs février\n• Retour formation commerciale\n• Point sur les nouveaux outils\n• Feedback équipe\n• Questions diverses\n\nDurée prévue: 1h30\nParticipants: toute l\'équipe',
-    category: 'meeting',
-    priority: 'high',
-    tags: ['réunion', 'équipe', 'objectifs'],
-    isPinned: true,
-    userId: '3',
-    createdAt: '2024-01-13T16:45:00Z',
-    updatedAt: '2024-01-13T16:45:00Z',
-  },
-  {
-    id: '4',
-    title: 'Rappel: Renouveler licence logiciels',
-    content: 'Licences à renouveler avant fin février:\n\n✅ CRM Pro - 25 licences\n⏳ Suite Office - 50 licences\n⏳ Antivirus - 30 licences\n⏳ Logiciel comptabilité\n\nBudget prévu: 12 000€\nContact fournisseur: tech@supplier.com',
-    category: 'reminder',
-    priority: 'medium',
-    tags: ['licence', 'renouvellement', 'budget'],
-    isPinned: false,
-    userId: '3',
-    createdAt: '2024-01-12T09:15:00Z',
-    updatedAt: '2024-01-12T09:15:00Z',
-  },
-];
+export default function NotesGrid({ notes, setNotes, onEditNote }: NotesGridProps) {
 
-export default function NotesGrid({ notes, onEditNote }: NotesGridProps) {
-  const { deleteNote } = useAppStore();
-  const displayNotes = notes.length > 0 ? notes : mockNotes;
+  const displayNotes = notes;
 
   const handleDeleteNote = (noteId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation()
     if (confirm('Êtes-vous sûr de vouloir supprimer cette note ?')) {
-      deleteNote(noteId);
+    
+    api.delete(`/post/api/deleteNote/${noteId}`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+      }
+      }).then(_=>{
+      api.get('/post/api/notes', {
+      headers: {
+        Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+      }
+      }).then((res) => {
+      if (res.status === 200) {
+        setNotes(res.data.notes)
+      }
+
+    })
+    })
+
     }
   };
 
@@ -92,7 +61,7 @@ export default function NotesGrid({ notes, onEditNote }: NotesGridProps) {
       {displayNotes.map((note, index) => {
         const priority = priorityConfig[note.priority];
         const category = categoryConfig[note.category];
-        
+
         return (
           <motion.div
             key={note.id}
@@ -151,14 +120,7 @@ export default function NotesGrid({ notes, onEditNote }: NotesGridProps) {
             {/* Tags */}
             {note.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-4">
-                {note.tags.slice(0, 3).map((tag, tagIndex) => (
-                  <span
-                    key={tagIndex}
-                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300"
-                  >
-                    #{tag}
-                  </span>
-                ))}
+                { }
                 {note.tags.length > 3 && (
                   <span className="text-xs text-gray-400">
                     +{note.tags.length - 3}

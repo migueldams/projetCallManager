@@ -1,105 +1,46 @@
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React from 'react';
 import { api } from '../../../store/authStore';
 import { getToken } from '../../../utils/auth'
 
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  password: String;
-  email: string;
-  content: String;
-  role: 'Admin' | 'RH' | 'Superviseur' | 'Agent' | 'Manager';
-  department: string;
-  status_activite: 'active' | 'inactive' | 'suspended';
-  isActive: boolean;
-  lastLogin: string;
-  avatar: string;
-  permissions: string[];
-}
 
 
 interface UserEditorProps {
-  userId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const roleOptions = [
-  { value: 'dg', label: 'Direction generale', icon: 'ri-user-line' },
+const statusOptions = [
+  { value: 'in_stock', label: 'en stock', icon: 'ri-user-line' },
   { value: 'daf', label: 'Direction financier', icon: 'ri-briefcase-line' },
   { value: 'rh', label: 'Ressource humaine', icon: 'ri-folder-line' },
-  { value: 'supervisor', label: 'superviseur', icon: 'ri-lightbulb-line' },
-  { value: 'agent', label: 'Agent', icon: 'ri-team-line' },
-  { value: 'admin', label: 'Admin systeme', icon: 'ri-alarm-line' },
 ];
 
-const departementOptions = [
-  { value: 'Direction', label: 'Direction', color: 'text-green-600' },
-  { value: 'call-center', label: 'call-center', color: 'text-yellow-600' },
-  { value: 'externe', label: 'Externe', color: 'text-red-600' },
-];
 
-export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps) {
+export default function StocksEdit({  isOpen, onClose }: UserEditorProps) {
 
-  const [users, setUsers] = useState<User>()
-  const [formUser, setFormUser] = useState({
-    id: '',
-    firstName: '',
-    lastName: '',
-    password: '',
-    email: '',
-    content: '',
-    role: 'Admin',
-    department: '',
-    status_activite: 'active',
-    isActive: true,
-    lastLogin: '',
-    avatar: '',
-    permissions: [],
-  });
+  const [formStock, setFormStock] = useState({ id: "",
+    name: "",
+    category: "",
+    quantity: 0,
+    minThreshold: 0,
+    price: 0,
+    supplier: "CM",
+    status: "in_stock"});
 
   const [isSaving, setIsSaving] = useState(false);
 
-  // charger l'utilisateur 
-  useEffect(() => {
-
-    if (userId) {
-
-       api.get(`post/api/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
-        }
-      }).then(res => {
-        console.log(res.data.user)
-        setUsers(res.data.user)
-      })
-    }
-
-  })
 
   const handleSave = async () => {
 
     try{
       
-    if (userId === null) {
-      await api.post('/post/api/createUser',formUser ,{
+      await api.post('/post/api/createStock',formStock ,{
         headers: {
           Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
         }
       } )
-
-    }else{
-      await api.put(`/post/api/updateUser/${userId}`,formUser ,{
-        headers: {
-          Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
-        }
-      } )
-
-    }
-      onClose();
+      onClose()
     } catch (error) {
       console.error('Error saving note:', error);
       alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
@@ -141,10 +82,10 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
               </div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {userId ? "Modifier l'/utilisateur " : "Nouvelle l'utilisateur"}
+                  Nouvelle stock
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {userId ? 'Modifiez le compte' : 'Créez une nouvelle utilisateur'}
+                  Créez une nouvelle stock
                 </p>
               </div>
             </div>
@@ -153,12 +94,12 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setFormUser({ ...formUser, isActive: !formUser.isActive })}
-                className={`p-2 rounded-2xl transition-all cursor-pointer ${formUser.isActive
+                onClick={() => setFormStock({ ...formStock, status: formStock.status })}
+                className={`p-2 rounded-2xl transition-all cursor-pointer ${formStock.status
                   ? 'bg-red-100 text-blue-600 dark:bg-red-900/30 dark:text-blue-400'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
                   }`}
-                title={formUser.isActive ? 'en-ligne' : 'hors-ligne'}
+                title={formStock.status ? 'en-ligne' : 'hors-ligne'}
               >
               </motion.button>
 
@@ -181,14 +122,14 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
                 <div className='flex'>
                   <div className='w-1/2' >
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nom *
+                    Nom de l'artircle*
                   </label>
                   <input
                     type="text"
-                    value={formUser.lastName}
-                    onChange={(e)=>setFormUser({...formUser,lastName :e.target.value})}
+                    value={formStock.name}
+                    onChange={(e)=>setFormStock({...formStock,name :e.target.value})}
                     onKeyPress={handleKeyPress}
-                    placeholder={userId ? `${users?.lastName}` :"entrer le nom..." }
+                    placeholder="entrer le nom de l'article ..."
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     autoFocus
                     required
@@ -197,14 +138,14 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
                 {/* Category and Priority */}
                 <div className='w-1/2 ml-1' >
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Prenom *
+                    category de l'article *
                   </label>
                   <input
                     type="text"
-                    value={formUser.firstName}
-                    onChange={(e)=>setFormUser({...formUser,firstName :e.target.value})}
+                    value={formStock.category}
+                    onChange={(e)=>setFormStock({...formStock,category :e.target.value})}
                     onKeyPress={handleKeyPress}
-                    placeholder={userId ? `${users?.email}` : "entrer le Prenom..."}
+                    placeholder= "entrer la catégory..."
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     autoFocus
                     required
@@ -214,14 +155,14 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email *
+                    supplier *
                   </label>
                   <input
-                    type="email"
-                    value={formUser.email}
-                    onChange={(e)=>setFormUser({...formUser, email :e.target.value}) }
+                    type="text"
+                    value={formStock.supplier}
+                    onChange={(e)=>setFormStock({...formStock,supplier :e.target.value}) }
                     onKeyPress={handleKeyPress}
-                    placeholder={userId ? `${users?.email}` : 'enter votre email'}
+                    placeholder= 'enter votre nom de votre fornisseur'
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     autoFocus
                     required
@@ -229,17 +170,29 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Password *
+                    Prix l'unitaire *
                   </label>
                   <input
-                    type="password"
-                    value={formUser.password}
-                    onChange={(e) => setFormUser({ ...formUser, password: e.target.value })}
+                    type="number"
+                    value={formStock.price}
+                    onChange={(e) => setFormStock({ ...formStock, price: Number(e.target.value) })}
                     onKeyPress={handleKeyPress}
-                    placeholder="password1234"
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     autoFocus
-                    disabled
+                  />
+
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Quantité actuel *
+                  </label>
+                  <input
+                    type="number"
+                    value={formStock.quantity}
+                    onChange={(e) => setFormStock({ ...formStock, quantity: Number(e.target.value) })}
+                    onKeyPress={handleKeyPress}
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    autoFocus
                   />
 
                 </div>
@@ -252,11 +205,11 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
                     </label>
                     <div className="relative">
                       <select
-                        value={formUser.role}
-                        onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
+                        value={formStock.status}
+                        onChange={(e) => setFormStock({ ...formStock, status: e.target.value })}
                         className="w-full px-4 py-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer appearance-none"
                       >
-                        {roleOptions.map(option => (
+                        {statusOptions.map(option => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -268,42 +221,21 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Departement
+                      quantité minimal pour l'article
                     </label>
                     <div className="relative">
-                      <select
-                        value={formUser?.department}
-                        onChange={(e) => setFormUser({ ...formUser, role: e.target.value })}
+                      <input
+                        type='number'
+                        value={formStock.minThreshold}
+                        onChange={(e) => setFormStock({ ...formStock, minThreshold: Number(e.target.value) })}
                         className="w-full px-4 py-3 pr-8 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer appearance-none"
-                      >
-                        {departementOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
                       <i className="ri-arrow-down-s-line absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                     </div>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Contenu *
-                  </label>
-                  <textarea
-                    value={formUser.content}
-                    onChange={(e) => setFormUser({ ...formUser, content: e.target.value })}
-                    placeholder="Écrivez le contenu de votre note ici..."
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                    rows={5}
-                    maxLength={500}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {formUser.content.length}/500 caractères
-                  </p>
-                </div>
 
                 {/* Tags */}
 
@@ -343,7 +275,7 @@ export default function UserEditor({ userId, isOpen, onClose }: UserEditorProps)
                   ) : (
                     <>
                       <i className="ri-save-line"></i>
-                      <span>{userId ? 'Modifier' : 'Créer'}</span>
+                      <span> 'Créer'</span>
                     </>
                   )}
                 </motion.button>

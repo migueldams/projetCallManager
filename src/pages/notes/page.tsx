@@ -1,15 +1,16 @@
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../../store/authStore';
-import { useAppStore } from '../../store/appStore';
+import { api } from '../../store/authStore';
+import { motion, AnimatePresence } from 'framer-motion'
 import NotesGrid from './components/NotesGrid';
 import NoteEditor from './components/NoteEditor';
 import NoteFilters from './components/NoteFilters';
+import type { Note } from '../../types';
+import { getToken } from '../../utils/auth';
 
 export default function NotesPage() {
-  const {user} = useAuthStore();
-  const { notes } = useAppStore();
+  
+  const [notes,setNotes] = useState<Note[]>([])
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -18,14 +19,28 @@ export default function NotesPage() {
     search: '',
   });
 
+  useEffect(()=>{
+    
+        api.get('/post/api/notes', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+          }
+        }).then((res) => {
+          if (res.status === 200) {
+            setNotes(res.data.notes)
+          }
+    
+        })
+  },[])
+  const fixnotes = notes
   // Filtrer les notes selon les critères
-  const filteredNotes = notes.filter(note => {
+  const filteredNotes = notes?.filter(note => {
     if (filters.category !== 'all' && note.category !== filters.category) return false;
     if (filters.priority !== 'all' && note.priority !== filters.priority) return false;
     if (filters.search && !note.title.toLowerCase().includes(filters.search.toLowerCase()) && 
         !note.content.toLowerCase().includes(filters.search.toLowerCase())) return false;
     return true;
-  });
+})|| [];
 
   const handleCreateNote = () => {
     setSelectedNote(null);
@@ -90,7 +105,7 @@ export default function NotesPage() {
       <NoteFilters 
         filters={filters} 
         onFiltersChange={setFilters}
-        totalNotes={notes.length}
+        totalNotes={notes.length} 
       />
 
       {/* AI Assistant Panel */}
@@ -145,6 +160,7 @@ export default function NotesPage() {
       {/* Notes Grid */}
       <NotesGrid 
         notes={filteredNotes}
+        setNotes={setNotes}
         onEditNote={handleEditNote}
       />
 
@@ -153,6 +169,7 @@ export default function NotesPage() {
         {isEditorOpen && (
           <NoteEditor
             noteId={selectedNote}
+            setNotes={setNotes}
             isOpen={isEditorOpen}
             onClose={() => {
               setIsEditorOpen(false);
