@@ -32,7 +32,6 @@ export default function NotesPage() {
     
         })
   },[])
-  const fixnotes = notes
   // Filtrer les notes selon les critères
   const filteredNotes = notes?.filter(note => {
     if (filters.category !== 'all' && note.category !== filters.category) return false;

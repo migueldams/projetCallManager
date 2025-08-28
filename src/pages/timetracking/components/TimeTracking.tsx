@@ -6,11 +6,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 interface TimeTrackingProps {
   userId?: string;
 }
+interface WeeklyData {
+   day: string; hours: number; target: number;
+}
 
 export default function TimeTracking({ userId }: TimeTrackingProps) {
   const { timeEntries } = useAppStore();
-  const [weeklyData, setWeeklyData] = useState([]);
-  const [monthlyStats, setMonthlyStats] = useState({
+  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
+  const [monthlyStats, setMonthlyStats] = useState ({
     totalHours: 0,
     averageDaily: 0,
     daysWorked: 0,

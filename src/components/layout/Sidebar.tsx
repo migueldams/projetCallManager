@@ -25,6 +25,7 @@ const menuItems = {
     { icon: 'ri-bar-chart-line', label: 'Mes performances', path: '/performance' },
     { icon: 'ri-calendar-line', label: 'Demandes congés', path: '/leaves' },
     { icon: 'ri-sticky-note-line', label: 'Notes', path: '/notes' },
+    { icon: 'ri-sticky-note-line', label: 'Discipline', path: '/discipline' },
   ],
   rh: [
     { icon: 'ri-dashboard-line', label: 'Tableau de bord', path: '/dashboard' },

@@ -1,6 +1,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { getIsTartedStorage, getTimeStorage } from '../../../localstorage/timeStorage';
 
 interface CheckInCardProps {
   isCheckedIn: boolean;
@@ -12,29 +13,71 @@ interface CheckInCardProps {
 export default function CheckInCard({ isCheckedIn, todaysEntry, onCheckIn, onCheckOut }: CheckInCardProps) {
   const [workingTime, setWorkingTime] = useState('00:00:00');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [timeInCheck, setTimeInCheck] = useState({ hours: 0, min: 0, sec: 0 })
 
   useEffect(() => {
-    if (isCheckedIn && todaysEntry) {
+    if (isCheckedIn ) {
+      let s = timeInCheck.sec
+      let mins = timeInCheck.min
+      let hours = timeInCheck.hours
       const interval = setInterval(() => {
-        const checkInTime = new Date(todaysEntry.checkIn);
-        const now = new Date();
-        const diff = now.getTime() - checkInTime.getTime();
-        
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        setWorkingTime(
-          `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-        );
-      }, 1000);
+        let sec = s
+        let min = mins
+        let hour = hours
+        sec++
+        { sec >= 60 && (min += 1, sec = 0) }
+        { min >= 60 && (hour += 1, sec = 0, min = 0) }
 
-      return () => clearInterval(interval);
+
+
+        setWorkingTime(
+          `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`
+        );
+        s = sec
+        mins = min
+        hours = hour
+        setTimeInCheck({ hours: hour, min, sec })
+      }, 1200);
+      return () => {
+        clearInterval(interval)
+      };
+
     }
-  }, [isCheckedIn, todaysEntry]);
+  }, [isCheckedIn]);
+
+  useEffect(() => {
+    if (Boolean(getIsTartedStorage())) {
+      const n = new Date()
+      const tLocal = getTimeStorage()
+      console.log(tLocal,"heure d/'entrée")
+      let hours = n.getHours() - tLocal.h;
+      let minutes = n.getMinutes() - tLocal.m;
+      let seconds = n.getSeconds() - tLocal.s;
+
+      // Ajustement si les secondes sont négatives
+      if (seconds < 0) {
+        seconds += 60;
+        minutes -= 1;
+      }
+
+      // Ajustement si les minutes sont négatives
+      if (minutes < 0) {
+        minutes += 60;
+        hours -= 1;
+      }
+
+      // Ajustement si les heures sont négatives (ex: passage minuit)
+      if (hours < 0) {
+        hours += 24;
+      }
+      console.log(n.getSeconds(), tLocal.s,n.getSeconds() - tLocal.s  ,'seconde')
+      setTimeInCheck({ hours, min: minutes, sec: seconds })
+    }
+  }, [])
 
   const handleAction = () => {
     if (isCheckedIn) {
+      setTimeInCheck({ hours: 0, min: 0, sec: 0 })
       onCheckOut();
     } else {
       onCheckIn();
@@ -80,10 +123,9 @@ export default function CheckInCard({ isCheckedIn, todaysEntry, onCheckIn, onChe
                   delay: i * 0.1,
                   ease: "easeOut"
                 }}
-                className={`absolute w-3 h-3 ${
-                  i % 3 === 0 ? 'bg-primary-500' : 
+                className={`absolute w-3 h-3 ${i % 3 === 0 ? 'bg-primary-500' :
                   i % 3 === 1 ? 'bg-accent-500' : 'bg-yellow-500'
-                } rounded-full`}
+                  } rounded-full`}
               />
             ))}
           </div>
@@ -106,9 +148,8 @@ export default function CheckInCard({ isCheckedIn, todaysEntry, onCheckIn, onChe
               }}
               className="w-4 h-4 rounded-full"
             />
-            <span className={`text-lg font-semibold ${
-              isCheckedIn ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'
-            }`}>
+            <span className={`text-lg font-semibold ${isCheckedIn ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'
+              }`}>
               {isCheckedIn ? 'En service' : 'Hors service'}
             </span>
           </div>
@@ -129,11 +170,10 @@ export default function CheckInCard({ isCheckedIn, todaysEntry, onCheckIn, onChe
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleAction}
-            className={`relative w-32 h-32 rounded-full shadow-2xl transition-all duration-300 cursor-pointer whitespace-nowrap ${
-              isCheckedIn
-                ? 'bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
-                : 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
-            }`}
+            className={`relative w-32 h-32 rounded-full shadow-2xl transition-all duration-300 cursor-pointer whitespace-nowrap ${isCheckedIn
+              ? 'bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+              : 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+              }`}
           >
             <motion.div
               animate={{ rotate: isCheckedIn ? 0 : 360 }}
@@ -145,7 +185,7 @@ export default function CheckInCard({ isCheckedIn, todaysEntry, onCheckIn, onChe
                 {isCheckedIn ? 'Sortie' : 'Arrivée'}
               </span>
             </motion.div>
-            
+
             {/* Ripple Effect */}
             <motion.div
               animate={{
@@ -157,9 +197,8 @@ export default function CheckInCard({ isCheckedIn, todaysEntry, onCheckIn, onChe
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
-              className={`absolute inset-0 rounded-full ${
-                isCheckedIn ? 'bg-red-400' : 'bg-green-400'
-              }`}
+              className={`absolute inset-0 rounded-full ${isCheckedIn ? 'bg-red-400' : 'bg-green-400'
+                }`}
             />
           </motion.button>
         </div>

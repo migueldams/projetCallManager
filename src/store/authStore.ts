@@ -21,6 +21,12 @@ export const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+export const apiOpenAi = axios.create({
+  baseURL: 'http://localhost:4000', // Backend Express
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
 export const useAuthStore = create<AuthState>()(
   persist(

@@ -18,6 +18,7 @@ import FinancePage from '../pages/finance/page';
 import InventoryPage from '../pages/inventory/page';
 import UsersPage from '../pages/users/page';
 import CompliancePage from '../pages/compliance/page';
+import DisciplinePage from '../pages/discipline/page';
 import NotFound from '../pages/NotFound';
 import Layout from '../components/layout/Layout';
 
@@ -76,6 +77,8 @@ export const routes : RouteObject[] = [
       { path: 'inventory', element: <InventoryPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'compliance', element: <CompliancePage /> },
+      {path: 'discipline', element: <DisciplinePage />}
+      ,
       {
     path: '*',
     element: (

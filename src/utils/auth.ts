@@ -12,7 +12,6 @@ export const getUserId =(): string | null =>{
 }
 
 export const getToken = (): string | null => {
-console.log("Token actuel :", localStorage.getItem("token"));
   return localStorage.getItem("token");
 };
 

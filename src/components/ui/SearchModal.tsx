@@ -2,16 +2,19 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { apiOpenAi } from '../../store/authStore';
+import { getToken } from '../../utils/auth';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+
 const searchSuggestions = [
-  { type: 'action', label: 'Créer un nouvel appel', icon: 'ri-phone-line', path: '/calls/new' },
-  { type: 'action', label: 'Pointer son arrivée', icon: 'ri-time-line', path: '/timetracking' },
-  { type: 'page', label: 'Tableau de bord', icon: 'ri-dashboard-line', path: '/dashboard' },
+  { type: 'action', label: 'Créer un nouvel appel', icon: 'ri-phone-line', path: '/callsPage' },
+  { type: 'action', label: 'Pointer son arrivée', icon: 'ri-time-line', path: '/timetrackingPage' },
+  { type: 'page', label: 'Tableau de bord', icon: 'ri-dashboard-line', path: '/dashboardPage' },
   { type: 'user', label: 'Sophie Leroy - Agent', icon: 'ri-user-line', path: '/users/3' },
   { type: 'data', label: 'Campagne Vente Premium', icon: 'ri-megaphone-line', path: '/calls?campaign=premium' },
 ];
@@ -19,6 +22,27 @@ const searchSuggestions = [
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [filteredResults, setFilteredResults] = useState(searchSuggestions);
+
+
+  const handleKeyDown = (e:KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const handleSearch = ()=>{
+    
+    if(filteredResults.length == 0 ){ 
+      apiOpenAi.post('/search',{query}, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`, // Assure-toi que le token est bien défini
+        }
+      }).then(res =>{
+        setFilteredResults(res.data.Results)
+      })}
+
+
+  }
 
   useEffect(() => {
     if (query.trim()) {
@@ -30,6 +54,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       setFilteredResults(searchSuggestions);
     }
   }, [query]);
+
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,7 +82,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
           />
         </Dialog.Overlay>
-        
+
         <Dialog.Content asChild>
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -74,6 +99,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none text-lg"
+                onKeyDown={handleKeyDown}
                 autoFocus
               />
               <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded border ml-3">ESC</kbd>
@@ -95,12 +121,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       }}
                       className="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
                     >
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-                        item.type === 'action' ? 'bg-primary-100 text-primary-600' :
-                        item.type === 'page' ? 'bg-gray-100 text-gray-600' :
-                        item.type === 'user' ? 'bg-green-100 text-green-600' :
-                        'bg-orange-100 text-orange-600'
-                      }`}>
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${item.type === 'action' ? 'bg-primary-100 text-primary-600' :
+                          item.type === 'page' ? 'bg-gray-100 text-gray-600' :
+                            item.type === 'user' ? 'bg-green-100 text-green-600' :
+                              'bg-orange-100 text-orange-600'
+                        }`}>
                         <i className={`${item.icon} text-lg`}></i>
                       </div>
                       <div className="flex-1">

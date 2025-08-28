@@ -35,7 +35,7 @@ export default function Layout() {
           sidebarCollapsed ? 'ml-20' : 'ml-80'
         }`}
       >
-        <div className="p-6 bg-primary-300">
+        <div className="p-6 bg-primary-300 dark:bg-gray-950">
           <Outlet/>
         </div>
       </motion.main>
